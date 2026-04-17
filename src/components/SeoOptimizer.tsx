@@ -17,14 +17,52 @@ export default function SeoOptimizer() {
   const [generatedCode, setGeneratedCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatedPlatform, setGeneratedPlatform] = useState<'wordpress' | 'blogger' | null>(null);
 
-  const handleOptimize = async () => {
+  const handleOptimize = async (platform: 'wordpress' | 'blogger') => {
     setIsGenerating(true);
     setGeneratedCode('');
+    setGeneratedPlatform(platform);
     setError(null);
     
-    const systemInstruction = `You are a world-class SEO Architect and Elementor Code Optimizer for WordPress.
-    You must take the user's existing basic HTML and fully optimize it for SEO in 2026.
+    let platformSpecificInstructions = '';
+    
+    if (platform === 'wordpress') {
+      platformSpecificInstructions = `You are a world-class SEO Architect and Elementor Code Optimizer for WordPress.
+      You must take the user's existing basic HTML and fully optimize it for SEO in 2026.
+      
+      - IMAGES: DO NOT use Base64 strings in img src attributes. Use WordPress placeholder paths (e.g., src="/wp-content/uploads/2026/04/[image-name].jpg").
+      
+      FINAL OUTPUT FORMAT:
+      Output the exact following format using markdown blocks for the code.
+      Title (55-65 chars): <title>
+      Meta Description (150-160 chars): <meta>
+      Labels: <labels>
+      Focus Keyword: <keyword>
+      Permalink: <permalink>
+
+      Then output the FULL Elementor compatible HTML code in an html markdown block (\`\`\`html)
+      `;
+    } else {
+      platformSpecificInstructions = `You are a world-class SEO Architect and HTML Code Optimizer for Google Blogger.
+      You must take the user's existing basic HTML and fully optimize it for SEO in 2026 natively for Blogger.
+      
+      - Blogger Specific Rules: DO NOT use WordPress shortcodes. DO NOT rely on heavy external CSS or Elementor classes. Use standard clean HTML5 and highly-compatible inline CSS or a single <style> block that is compatible with Google Blogger's editor. Maximize semantic HTML.
+      - IMAGES: DO NOT use Base64 strings. DO NOT use WordPress (/wp-content/) paths. Use standard placeholder image URLs (e.g., https://via.placeholder.com/800x450).
+      
+      FINAL OUTPUT FORMAT:
+      Output the exact following format using markdown blocks for the code.
+      Title (55-65 chars): <title>
+      Meta Description (150-160 chars): <meta>
+      Labels: <labels>
+      Focus Keyword: <keyword>
+      Permalink: <permalink>
+
+      Then output the FULL Google Blogger compatible HTML code in an html markdown block (\`\`\`html)
+      `;
+    }
+
+    const systemInstruction = `${platformSpecificInstructions}
     
     CONDITIONS:
     1. If user provided Image URLs are empty: auto fetch relevant images (Unsplash/Pexels/Pixabay/SVG)
@@ -38,17 +76,6 @@ export default function SeoOptimizer() {
     - Proper H1 (only one), H2, H3 hierarchy.
     - Short paragraphs (5-8 lines). E-E-A-T requirements (experience, trust, local references for ${targetLocation} if context suits). Target Audience: ${targetAudience}.
     - DO NOT include any YouTube video embeds.
-    - IMAGES: DO NOT use Base64 strings in img src attributes. Use WordPress placeholder paths (e.g., src="/wp-content/uploads/2026/04/[image-name].jpg").
-
-    FINAL OUTPUT FORMAT:
-    Output the exact following format using markdown blocks for the code.
-    Title (55-65 chars): <title>
-    Meta Description (150-160 chars): <meta>
-    Labels: <labels>
-    Focus Keyword: <keyword>
-    Permalink: <permalink>
-
-    Then output the FULL Elementor compatible HTML code in an html markdown block (\`\`\`html)
     `;
 
     const prompt = `
@@ -180,14 +207,22 @@ export default function SeoOptimizer() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-200">
+          <div className="pt-4 border-t border-slate-200 flex flex-col md:flex-row gap-4">
              <button 
-                onClick={handleOptimize}
+                onClick={() => handleOptimize('wordpress')}
                 disabled={isGenerating || !existingHtml || !focusKeyword}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-purple-600 text-white rounded-xl font-bold text-lg hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-sm"
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-purple-600 text-white rounded-xl font-bold text-base hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-sm"
               >
-                {isGenerating ? <Loader2 className="w-6 h-6 animate-spin" /> : <Code className="w-6 h-6" />}
-                Generate Fully Optimized Code
+                {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Code className="w-5 h-5" />}
+                Generate for WordPress
+              </button>
+              <button 
+                onClick={() => handleOptimize('blogger')}
+                disabled={isGenerating || !existingHtml || !focusKeyword}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-orange-600 text-white rounded-xl font-bold text-base hover:bg-orange-700 disabled:opacity-50 transition-colors shadow-sm"
+              >
+                {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
+                Generate for Google Blogger
               </button>
           </div>
         </div>
@@ -198,7 +233,7 @@ export default function SeoOptimizer() {
            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-purple-400" />
-                Optimized Output
+                Optimized Output {generatedPlatform && <span className="text-sm font-normal text-slate-400">({generatedPlatform === 'wordpress' ? 'WordPress' : 'Google Blogger'})</span>}
              </h3>
              {generatedCode && (
               <div className="flex items-center gap-2">

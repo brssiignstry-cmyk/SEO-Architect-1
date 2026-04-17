@@ -89,6 +89,11 @@ export const generateImageWithGemini = async (prompt: string): Promise<string> =
         },
       ],
     },
+    config: {
+      imageConfig: {
+        aspectRatio: "16:9"
+      }
+    }
   });
   
   if (response.candidates && response.candidates.length > 0) {

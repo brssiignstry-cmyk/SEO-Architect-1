@@ -46,6 +46,7 @@ export default function ArticleGenerator({ mode }: Props) {
   const [generatedArticle, setGeneratedArticle] = useState('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatedPlatform, setGeneratedPlatform] = useState<'wordpress' | 'blogger' | null>(null);
 
   const handleGenerateOutline = async () => {
     setIsGeneratingOutline(true);
@@ -153,15 +154,42 @@ export default function ArticleGenerator({ mode }: Props) {
     document.body.removeChild(link);
   };
 
-  const handleGenerateArticle = async () => {
+  const handleGenerateArticle = async (platform: 'wordpress' | 'blogger') => {
     setIsGeneratingArticle(true);
     setGeneratedArticle('');
+    setGeneratedPlatform(platform);
     setError(null);
     
     const identifier = mode === 'STATIC_PAGE' ? `Page Type: ${pageType}` : `Blog Title: ${blogTitle}`;
     
-    const systemInstruction = `You are a world-class SEO Architect and Elementor Code Generator for WordPress.
+    let platformSpecificInstructions = '';
+    if (platform === 'wordpress') {
+      platformSpecificInstructions = `You are a world-class SEO Architect and Elementor Code Generator for WordPress.
 You are generating a complete SEO-optimized, highly-designed WordPress article/page based on the provided inputs.
+
+SECTION 7: MEDIA RULES
+Each section must include a relevant image. Follow the explicit 'Image Directives' strictly.
+DO NOT use Base64 strings. Use native WP paths. DO NOT include any YouTube video embeds.
+If no directive, automatically insert placeholders from Unsplash/Pexels/Pixabay/Freepik.
+
+SECTION 10: HTML OUTPUT REQUIREMENTS
+- Clean HTML + inline CSS (or grouped <style> block). NO external CSS file dependencies. Elementor Custom HTML widget compatible. Use class-based styling.
+`;
+    } else {
+      platformSpecificInstructions = `You are a world-class SEO Architect and HTML Code Generator for Google Blogger.
+You are generating a complete SEO-optimized, highly-designed Blogger post/page based on the provided inputs.
+
+SECTION 7: MEDIA RULES
+Each section must include a relevant image. Follow the explicit 'Image Directives' strictly.
+DO NOT use Base64 strings. DO NOT use WordPress (/wp-content/) paths. Use standard HTTP Web image URLs. DO NOT include any YouTube video embeds.
+If no directive, automatically insert placeholders from Unsplash/Pexels/Pixabay via standard https formats.
+
+SECTION 10: HTML OUTPUT REQUIREMENTS
+- Google Blogger Specific Rules: DO NOT use WordPress shortcodes. DO NOT rely on heavy external CSS or Elementor classes. Use standard clean HTML5 and highly-compatible inline CSS or a single <style> block that is perfectly compatible with Google Blogger's editor. Maximize semantic HTML.
+`;
+    }
+
+    const systemInstruction = `${platformSpecificInstructions}
 
 ARTICLE WRITING & SEO ENGINE:
 
@@ -199,11 +227,6 @@ SECTION 5: HEADING STRUCTURE
 SECTION 6: TABLE OF CONTENTS
 - Add immediately after featured image
 - Auto-linked anchor navigation
-
-SECTION 7: MEDIA RULES
-Each section must include a relevant image. Follow the explicit 'Image Directives' strictly.
-DO NOT use Base64 strings. Use native WP paths. DO NOT include any YouTube video embeds.
-If no directive, automatically insert placeholders from Unsplash/Pexels/Pixabay/Freepik.
 
 SECTION 8: KEYWORD PLACEMENT
 Must include keyword in: Title, Meta description, H1, First 100 words, At least one H2 or H3, Every 150–200 words, Final paragraph.
@@ -259,9 +282,6 @@ SECTION 8: HERO SECTION
 SECTION 9: CTA DESIGN
 - WhatsApp (green style), Email (contrast color). Strong hover animations.
 
-SECTION 10: HTML OUTPUT REQUIREMENTS
-- Clean HTML + inline CSS (or grouped <style> block). NO external CSS file dependencies. Elementor Custom HTML widget compatible. Use class-based styling.
-
 SECTION 11: BLOG POST/PAGE DESIGN
 - Clean reading layout, good line spacing, highlighted headings, content blocks, styled FAQs, styled comparison tables.
 
@@ -279,7 +299,7 @@ Labels: <labels>
 Focus Keyword: <keyword>
 Permalink: <permalink>
 
-Then output the FULL Elementor compatible HTML code in an html markdown block (\`\`\`html).
+Then output the FULL platform-compatible HTML code in an html markdown block (\`\`\`html).
     `;
 
     const prompt = `
@@ -440,10 +460,16 @@ Then output the FULL Elementor compatible HTML code in an html markdown block (\
                 
                 {imagePrompts.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Image Prompt</p>
-                    <p className="text-sm bg-blue-50 text-blue-800 p-3 rounded-lg italic">
-                      "{imagePrompts[i]}"
-                    </p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Image Prompt (Editable)</p>
+                    <textarea 
+                      className="w-full text-sm bg-blue-50 text-blue-800 p-3 rounded-lg italic border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
+                      value={imagePrompts[i]}
+                      onChange={e => {
+                        const newPrompts = [...imagePrompts];
+                        newPrompts[i] = e.target.value;
+                        setImagePrompts(newPrompts);
+                      }}
+                    />
                     
                     <div className="flex gap-3">
                       <button 
@@ -452,31 +478,32 @@ Then output the FULL Elementor compatible HTML code in an html markdown block (\
                         className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 transition disabled:opacity-50"
                       >
                         {isGeneratingImageMap[i] ? <Loader2 className="w-4 h-4 animate-spin" /> : (generatedImages[i] ? <RefreshCw className="w-4 h-4" /> : <Wand2 className="w-4 h-4" />)}
-                        {generatedImages[i] ? 'Regenerate Image' : 'Generate Image'}
+                        {generatedImages[i] ? 'Regenerate Built-In Image' : 'Generate AI Image'}
                       </button>
                     </div>
 
                     {generatedImages[i] && (
-                      <div className="mt-3  max-w-xs relative border border-slate-200 rounded-lg overflow-hidden group">
+                      <div className="mt-3 max-w-xs relative border border-slate-200 rounded-lg overflow-hidden group">
                         <img src={generatedImages[i]} alt={`Section ${i+1}`} className="w-full h-auto block" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button 
                             onClick={() => handleDownloadImage(i)}
                             className="bg-white text-slate-900 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 hover:bg-blue-50 shadow-lg"
                           >
-                            <Download className="w-4 h-4" /> Download
+                            <Download className="w-4 h-4" /> Download Image
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {!generatedImages[i] && (
-                      <div className="flex gap-3 items-center mt-3">
-                        <ImageIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    <div className="flex gap-3 items-center mt-3 bg-slate-100 p-3 rounded-xl border border-slate-200">
+                      <ImageIcon className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                      <div className="w-full">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Final Media URL (Required for Article)</label>
                         <input 
                           type="text" 
-                          placeholder="Or paste external Image URL (optional)" 
-                          className="w-full text-sm p-2 rounded-lg border border-slate-300 bg-white"
+                          placeholder="Paste WordPress Media URL here (Overrides AI placeholder)" 
+                          className="w-full text-sm p-2 rounded-md border border-slate-300 bg-white"
                           value={imageUrls[i]}
                           onChange={e => {
                             const newUrls = [...imageUrls];
@@ -485,7 +512,7 @@ Then output the FULL Elementor compatible HTML code in an html markdown block (\
                           }}
                         />
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -534,14 +561,22 @@ Then output the FULL Elementor compatible HTML code in an html markdown block (\
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-200">
+          <div className="pt-4 border-t border-slate-200 flex flex-col md:flex-row gap-4">
              <button 
-                onClick={handleGenerateArticle}
+                onClick={() => handleGenerateArticle('wordpress')}
                 disabled={isGeneratingArticle}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-green-600 text-white rounded-xl font-bold text-base hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"
               >
-                {isGeneratingArticle ? <Loader2 className="w-6 h-6 animate-spin" /> : <Code className="w-6 h-6" />}
-                Generate Article Code for WordPress
+                {isGeneratingArticle ? <Loader2 className="w-5 h-5 animate-spin" /> : <Code className="w-5 h-5" />}
+                Generate for WordPress
+              </button>
+              <button 
+                onClick={() => handleGenerateArticle('blogger')}
+                disabled={isGeneratingArticle}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-orange-600 text-white rounded-xl font-bold text-base hover:bg-orange-700 disabled:opacity-50 transition-colors shadow-sm"
+              >
+                {isGeneratingArticle ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
+                Generate for Google Blogger
               </button>
           </div>
         </div>
@@ -552,7 +587,7 @@ Then output the FULL Elementor compatible HTML code in an html markdown block (\
            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-400" />
-                Final Output
+                Final Output {generatedPlatform && <span className="text-sm font-normal text-slate-400">({generatedPlatform === 'wordpress' ? 'WordPress' : 'Google Blogger'})</span>}
              </h3>
              {generatedArticle && (
               <div className="flex items-center gap-2">
