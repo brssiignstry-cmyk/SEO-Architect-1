@@ -1,0 +1,184 @@
+import React, { useState } from 'react';
+import { getGeminiStream } from '../services/geminiService';
+import { Loader2, Code, Copy, CheckCircle, Wand2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+
+export default function SeoOptimizer() {
+  const [existingHtml, setExistingHtml] = useState('');
+  const [focusKeyword, setFocusKeyword] = useState('');
+  const [imageUrls, setImageUrls] = useState('');
+  const [externalLinks, setExternalLinks] = useState('');
+  const [internalLinks, setInternalLinks] = useState('');
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const handleOptimize = async () => {
+    setIsGenerating(true);
+    setGeneratedCode('');
+    
+    const systemInstruction = `You are a world-class SEO Architect and Elementor Code Optimizer for WordPress.
+    You must take the user's existing basic HTML and fully optimize it for SEO in 2026.
+    
+    CONDITIONS:
+    1. If user provided Image URLs are empty: auto fetch relevant images (Unsplash/Pexels/Pixabay/SVG)
+    2. If external links are empty: auto generate minimum 25 anchor texts with trusted sources (Google, Bing, Wikipedia, etc).
+    3. If internal links are empty: auto link to standard pages (/about-us/, /contact/, etc).
+
+    SEO RULES 2026 check/apply:
+    - Target Focus Keyword heavily but naturally.
+    - Keyword density: 0.6% - 1.0%
+    - Placement: Title, Meta description, H1, First 100 words, >= 1 H2 or H3, every 150-200 words, final paragraph.
+    - Proper H1 (only one), H2, H3 hierarchy.
+    - Short paragraphs (5-8 lines). E-E-A-T requirements (experience, trust, local references if context suits).
+
+    FINAL OUTPUT FORMAT:
+    Output the exact following format using markdown blocks for the code.
+    Title (55-65 chars): <title>
+    Meta Description (150-160 chars): <meta>
+    Labels: <labels>
+    Focus Keyword: <keyword>
+    Permalink: <permalink>
+
+    Then output the FULL Elementor compatible HTML code in an html markdown block (\`\`\`html)
+    `;
+
+    const prompt = `
+    Focus Keyword: ${focusKeyword}
+    
+    User Provided Image URLs List:
+    ${imageUrls || 'NONE - Apply Condition 1'}
+    
+    User Provided External Links Input:
+    ${externalLinks || 'NONE - Apply Condition 2'}
+    
+    User Provided Internal Links Input:
+    ${internalLinks || 'NONE - Apply Condition 3'}
+
+    EXISTING HTML TO OPTIMIZE:
+    ${existingHtml}
+    `;
+
+    try {
+      const stream = getGeminiStream(prompt, systemInstruction);
+      let content = '';
+      for await (const chunk of stream) {
+        content += chunk;
+        setGeneratedCode(content);
+      }
+    } catch(e) {
+      console.error(e);
+      alert('Failed to optimize HTML.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8 pb-12">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 className="text-2xl font-bold text-slate-800 mb-6 font-display flex items-center gap-2">
+          <Wand2 className="w-6 h-6 text-purple-600" />
+          SEO Optimizer
+        </h2>
+
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Existing HTML (Non-SEO Code)</label>
+            <textarea 
+              rows={8}
+              className="w-full p-4 font-mono text-sm rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+              placeholder="Paste your existing messy or non-seo Elementor HTML here..."
+              value={existingHtml}
+              onChange={e => setExistingHtml(e.target.value)}
+            />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 p-5 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Focus Keyword</label>
+              <input 
+                className="w-full p-3 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-purple-500 transition-colors"
+                placeholder="The main keyword to optimize for..."
+                value={focusKeyword}
+                onChange={e => setFocusKeyword(e.target.value)}
+              />
+            </div>
+            
+            <div>
+               <label className="block text-sm font-semibold text-slate-700 mb-1">Image URLs (Optional)</label>
+               <textarea 
+                  rows={2}
+                  className="w-full p-3 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-purple-500 transition-colors"
+                  placeholder="Paste list of image URLs..."
+                  value={imageUrls}
+                  onChange={e => setImageUrls(e.target.value)}
+                />
+            </div>
+            
+             <div>
+               <label className="block text-sm font-semibold text-slate-700 mb-1">External Links (Optional)</label>
+               <textarea 
+                  rows={2}
+                  className="w-full p-3 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-purple-500 transition-colors"
+                  placeholder="Relevant external contexts/links..."
+                  value={externalLinks}
+                  onChange={e => setExternalLinks(e.target.value)}
+                />
+            </div>
+
+            <div className="md:col-span-2">
+               <label className="block text-sm font-semibold text-slate-700 mb-1">Internal Links (Optional)</label>
+               <textarea 
+                  rows={2}
+                  className="w-full p-3 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-purple-500 transition-colors"
+                  placeholder="Relevant internal targets or specific URLs inside your site..."
+                  value={internalLinks}
+                  onChange={e => setInternalLinks(e.target.value)}
+                />
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-200">
+             <button 
+                onClick={handleOptimize}
+                disabled={isGenerating || !existingHtml || !focusKeyword}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-purple-600 text-white rounded-xl font-bold text-lg hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-sm"
+              >
+                {isGenerating ? <Loader2 className="w-6 h-6 animate-spin" /> : <Code className="w-6 h-6" />}
+                Generate Fully Optimized Code
+              </button>
+          </div>
+        </div>
+      </div>
+
+      {(generatedCode || isGenerating) && (
+        <div className="bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-800">
+           <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+             <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-purple-400" />
+                Optimized Output
+             </h3>
+             {generatedCode && (
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedCode);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="flex items-center gap-2 text-sm bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-700 transition"
+              >
+                {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+             )}
+           </div>
+           <div className="p-6 overflow-y-auto max-h-[800px] prose prose-invert max-w-none">
+              <ReactMarkdown>{generatedCode}</ReactMarkdown>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+}
