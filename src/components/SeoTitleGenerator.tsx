@@ -1,24 +1,32 @@
 import React, { useState } from 'react';
 import { Type } from '@google/genai';
 import { getGeminiResponse } from '../services/geminiService';
-import { Loader2, Search, Copy, CheckCircle, Lightbulb } from 'lucide-react';
+import { Loader2, Search, Copy, CheckCircle, Lightbulb, AlertCircle } from 'lucide-react';
 
 export default function SeoTitleGenerator() {
   const [focusKeyword, setFocusKeyword] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedTitles, setGeneratedTitles] = useState<string[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [targetLocation, setTargetLocation] = useState('Trichy, Tamil Nadu, India');
+  const [targetAudience, setTargetAudience] = useState('Shop owners & contractors');
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     setGeneratedTitles([]);
+    setError(null);
     
     const prompt = `Generate exactly 20 SEO titles for the focus keyword: "${focusKeyword}".
+    Target Audience: ${targetAudience}
+    Target Location: ${targetLocation}
     
     Requirements:
     - Exactly 20 titles.
     - Length: strictly 55 to 65 characters long.
     - Must use power words (e.g., Best, 2026, Guide, Top, Price, Ultimate, Secret, etc.).
+    - Ensure location is included naturally in some titles if applicable.
     - Return a JSON array of strings.`;
 
     const schema = {
@@ -35,7 +43,7 @@ export default function SeoTitleGenerator() {
       }
     } catch(e) {
       console.error(e);
-      alert('Failed to generate titles.');
+      setError(`Failed to generate titles: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setIsGenerating(false);
     }
@@ -49,6 +57,12 @@ export default function SeoTitleGenerator() {
 
   return (
     <div className="space-y-8 pb-12 max-w-4xl mx-auto">
+      {error && (
+        <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h2 className="text-2xl font-bold text-slate-800 mb-6 font-display flex items-center gap-2">
           <Search className="w-6 h-6 text-amber-500" />
@@ -64,6 +78,27 @@ export default function SeoTitleGenerator() {
               value={focusKeyword}
               onChange={e => setFocusKeyword(e.target.value)}
             />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Target Audience</label>
+              <input 
+                className="w-full p-3 rounded-lg border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-amber-500 transition-colors"
+                placeholder="e.g., Shop owners & contractors"
+                value={targetAudience}
+                onChange={e => setTargetAudience(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Target Location</label>
+              <input 
+                className="w-full p-3 rounded-lg border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-amber-500 transition-colors"
+                placeholder="e.g., Trichy, Tamil Nadu, India"
+                value={targetLocation}
+                onChange={e => setTargetLocation(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="pt-2">

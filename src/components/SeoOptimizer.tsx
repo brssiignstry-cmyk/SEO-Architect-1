@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { getGeminiStream } from '../services/geminiService';
-import { Loader2, Code, Copy, CheckCircle, Wand2 } from 'lucide-react';
+import { Loader2, Code, Copy, CheckCircle, Wand2, FileDown, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { LinkUpload } from './LinkUpload';
 
 export default function SeoOptimizer() {
   const [existingHtml, setExistingHtml] = useState('');
@@ -10,13 +11,17 @@ export default function SeoOptimizer() {
   const [externalLinks, setExternalLinks] = useState('');
   const [internalLinks, setInternalLinks] = useState('');
 
+  const [targetLocation, setTargetLocation] = useState('Trichy, Tamil Nadu, India');
+  const [targetAudience, setTargetAudience] = useState('Shop owners & contractors');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleOptimize = async () => {
     setIsGenerating(true);
     setGeneratedCode('');
+    setError(null);
     
     const systemInstruction = `You are a world-class SEO Architect and Elementor Code Optimizer for WordPress.
     You must take the user's existing basic HTML and fully optimize it for SEO in 2026.
@@ -31,7 +36,9 @@ export default function SeoOptimizer() {
     - Keyword density: 0.6% - 1.0%
     - Placement: Title, Meta description, H1, First 100 words, >= 1 H2 or H3, every 150-200 words, final paragraph.
     - Proper H1 (only one), H2, H3 hierarchy.
-    - Short paragraphs (5-8 lines). E-E-A-T requirements (experience, trust, local references if context suits).
+    - Short paragraphs (5-8 lines). E-E-A-T requirements (experience, trust, local references for ${targetLocation} if context suits). Target Audience: ${targetAudience}.
+    - DO NOT include any YouTube video embeds.
+    - IMAGES: DO NOT use Base64 strings in img src attributes. Use WordPress placeholder paths (e.g., src="/wp-content/uploads/2026/04/[image-name].jpg").
 
     FINAL OUTPUT FORMAT:
     Output the exact following format using markdown blocks for the code.
@@ -69,7 +76,7 @@ export default function SeoOptimizer() {
       }
     } catch(e) {
       console.error(e);
-      alert('Failed to optimize HTML.');
+      setError(`Failed to optimize HTML: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setIsGenerating(false);
     }
@@ -77,6 +84,12 @@ export default function SeoOptimizer() {
 
   return (
     <div className="space-y-8 pb-12">
+      {error && (
+        <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h2 className="text-2xl font-bold text-slate-800 mb-6 font-display flex items-center gap-2">
           <Wand2 className="w-6 h-6 text-purple-600" />
@@ -106,6 +119,27 @@ export default function SeoOptimizer() {
               />
             </div>
             
+            <div className="grid md:grid-cols-2 gap-6 md:col-span-2">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Target Audience</label>
+                <input 
+                  className="w-full p-3 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-purple-500 transition-colors"
+                  placeholder="e.g., Shop owners & contractors"
+                  value={targetAudience}
+                  onChange={e => setTargetAudience(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Target Location</label>
+                <input 
+                  className="w-full p-3 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-purple-500 transition-colors"
+                  placeholder="e.g., Trichy, Tamil Nadu, India"
+                  value={targetLocation}
+                  onChange={e => setTargetLocation(e.target.value)}
+                />
+              </div>
+            </div>
+            
             <div>
                <label className="block text-sm font-semibold text-slate-700 mb-1">Image URLs (Optional)</label>
                <textarea 
@@ -118,22 +152,28 @@ export default function SeoOptimizer() {
             </div>
             
              <div>
-               <label className="block text-sm font-semibold text-slate-700 mb-1">External Links (Optional)</label>
+               <div className="flex justify-between items-center mb-1">
+                 <label className="block text-sm font-semibold text-slate-700">External Links (Optional)</label>
+                 <LinkUpload type="external" onExtract={(t) => setExternalLinks(prev => prev ? prev + '\n' + t : t)} />
+               </div>
                <textarea 
-                  rows={2}
+                  rows={3}
                   className="w-full p-3 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-purple-500 transition-colors"
-                  placeholder="Relevant external contexts/links..."
+                  placeholder="Relevant external contexts/links. Or upload a file."
                   value={externalLinks}
                   onChange={e => setExternalLinks(e.target.value)}
                 />
             </div>
 
             <div className="md:col-span-2">
-               <label className="block text-sm font-semibold text-slate-700 mb-1">Internal Links (Optional)</label>
+               <div className="flex justify-between items-center mb-1">
+                 <label className="block text-sm font-semibold text-slate-700">Internal Links (Optional)</label>
+                 <LinkUpload type="internal" onExtract={(t) => setInternalLinks(prev => prev ? prev + '\n' + t : t)} />
+               </div>
                <textarea 
-                  rows={2}
+                  rows={3}
                   className="w-full p-3 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-purple-500 transition-colors"
-                  placeholder="Relevant internal targets or specific URLs inside your site..."
+                  placeholder="Relevant internal targets or specific URLs inside your site. Or upload a file."
                   value={internalLinks}
                   onChange={e => setInternalLinks(e.target.value)}
                 />
@@ -161,17 +201,33 @@ export default function SeoOptimizer() {
                 Optimized Output
              </h3>
              {generatedCode && (
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText(generatedCode);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-                className="flex items-center gap-2 text-sm bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-700 transition"
-              >
-                {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'Copied!' : 'Copy'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const blob = new Blob([generatedCode], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `optimized-${focusKeyword.replace(/\s+/g, '-') || 'article'}.html`;
+                    link.click();
+                  }}
+                  className="flex items-center gap-2 text-sm bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700 transition"
+                  title="Download HTML Document"
+                >
+                  <FileDown className="w-4 h-4" /> Download HTML
+                </button>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedCode);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="flex items-center gap-2 text-sm bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-700 transition"
+                >
+                  {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
              )}
            </div>
            <div className="p-6 overflow-y-auto max-h-[800px] prose prose-invert max-w-none">
