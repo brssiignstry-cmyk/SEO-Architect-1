@@ -237,8 +237,13 @@ SECTION 9: INTERNAL LINKING
 - If none provided, auto link to standard pages (home, about us, services, blog, contact, privacy policy, terms, disclaimer, cookie policy, warranty policy).
 
 SECTION 10: EXTERNAL LINKING
-- Minimum 20–25 external links. Follow User Provided External Links exactly.
-- If none provided, auto-link to trusted sources (Wikipedia, Govt sites, Justdial, IndiaMart). Use rel="nofollow" where required.
+- Target exactly 25 external links across the 13 sections (exactly 2 new external links per section) related to anchor texts.
+- If User Provided External Links exist, use them.
+- If none provided, auto-generate valid external links:
+  - SOURCING RULE: Use Wikipedia for ONLY 2 sections max (up to 4 links total from Wikipedia).
+  - All other external links MUST be from unique, valid, diverse sources (e.g., Google, Bing, Yahoo results and other real, highly-relevant website pages).
+  - Do not repeat domains excessively. Ensure anchor texts match context naturally.
+  - Use rel="nofollow" where required.
 
 SECTION 11: ADVANCED CONTENT ELEMENTS
 Include where relevant: Comparison table, Pros & Cons table, FAQ section (minimum 10–15 FAQs), Real-life examples, Use-case explanations.
@@ -292,15 +297,20 @@ FINAL RULE:
 Content + Design must work together. Output must look like a professionally designed website section, not a plain HTML article.
 
 SECTION 14: OUTPUT FORMAT
-Output exactly:
-Title (55-65 chars): <title>
-Meta Description (150-160 chars): <meta>
-Labels: <labels>
-Focus Keyword: <keyword>
-Permalink: <permalink>
+Output exactly ONE single HTML markdown block (\`\`\`html) that contains EVERYTHING.
+At the very top of the HTML code, you MUST include this exact commented header:
+<!-- 
+================================================================
+1. Title: [Your generated 55-65 chars title]
+2. Meta Description: [Your generated 150-160 chars description]
+3. Labels: [3-6 labels]
+4. Focus Keyword: [The keyword]
+5. Permalink: [The generated slug]
+================================================================
+-->
+[Followed immediately by the FULL platform-compatible HTML code]
 
-Then output the FULL platform-compatible HTML code in an html markdown block (\`\`\`html).
-    `;
+DO NOT output the metadata outside of this HTML comment block.`;
 
     const prompt = `
     Request Context:

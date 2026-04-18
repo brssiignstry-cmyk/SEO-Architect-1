@@ -34,15 +34,20 @@ export default function SeoOptimizer() {
       - IMAGES: DO NOT use Base64 strings in img src attributes. Use WordPress placeholder paths (e.g., src="/wp-content/uploads/2026/04/[image-name].jpg").
       
       FINAL OUTPUT FORMAT:
-      Output the exact following format using markdown blocks for the code.
-      Title (55-65 chars): <title>
-      Meta Description (150-160 chars): <meta>
-      Labels: <labels>
-      Focus Keyword: <keyword>
-      Permalink: <permalink>
-
-      Then output the FULL Elementor compatible HTML code in an html markdown block (\`\`\`html)
-      `;
+      Output exactly ONE single HTML markdown block (\`\`\`html) that contains EVERYTHING.
+      At the very top of the HTML code, you MUST include this exact commented header:
+      <!-- 
+      ================================================================
+      1. Title: [Your generated 55-65 chars title]
+      2. Meta Description: [Your generated 150-160 chars description]
+      3. Labels: [3-6 labels]
+      4. Focus Keyword: [The keyword]
+      5. Permalink: [The generated slug]
+      ================================================================
+      -->
+      [Followed immediately by the FULL Elementor compatible HTML code]
+      
+      DO NOT output the metadata outside of this HTML comment block.`;
     } else {
       platformSpecificInstructions = `You are a world-class SEO Architect and HTML Code Optimizer for Google Blogger.
       You must take the user's existing basic HTML and fully optimize it for SEO in 2026 natively for Blogger.
@@ -51,22 +56,31 @@ export default function SeoOptimizer() {
       - IMAGES: DO NOT use Base64 strings. DO NOT use WordPress (/wp-content/) paths. Use standard placeholder image URLs (e.g., https://via.placeholder.com/800x450).
       
       FINAL OUTPUT FORMAT:
-      Output the exact following format using markdown blocks for the code.
-      Title (55-65 chars): <title>
-      Meta Description (150-160 chars): <meta>
-      Labels: <labels>
-      Focus Keyword: <keyword>
-      Permalink: <permalink>
-
-      Then output the FULL Google Blogger compatible HTML code in an html markdown block (\`\`\`html)
-      `;
+      Output exactly ONE single HTML markdown block (\`\`\`html) that contains EVERYTHING.
+      At the very top of the HTML code, you MUST include this exact commented header:
+      <!-- 
+      ================================================================
+      1. Title: [Your generated 55-65 chars title]
+      2. Meta Description: [Your generated 150-160 chars description]
+      3. Labels: [3-6 labels]
+      4. Focus Keyword: [The keyword]
+      5. Permalink: [The generated slug]
+      ================================================================
+      -->
+      [Followed immediately by the FULL Google Blogger compatible HTML code]
+      
+      DO NOT output the metadata outside of this HTML comment block.`;
     }
 
     const systemInstruction = `${platformSpecificInstructions}
     
     CONDITIONS:
     1. If user provided Image URLs are empty: auto fetch relevant images (Unsplash/Pexels/Pixabay/SVG)
-    2. If external links are empty: auto generate minimum 25 anchor texts with trusted sources (Google, Bing, Wikipedia, etc).
+    2. If external links are empty: 
+       - Auto generate exactly 25 external links (~2 per section based on anchor text).
+       - Use Wikipedia for ONLY 2 sections max (up to 4 links total from Wikipedia).
+       - All other links MUST be from unique, valid, diverse sources (e.g., Google, Bing, Yahoo results, and other real website pages).
+       - Prevent repeating domains.
     3. If internal links are empty: auto link to standard pages (/about-us/, /contact/, etc).
 
     SEO RULES 2026 check/apply:
